@@ -63,6 +63,15 @@ def _thermal_z_comp(rate_mm_c, print_temp, touch_temp):
 
 class _PRTouchPrinterProbe(probe.PrinterProbe):
     """PrinterProbe without axis-twist correction for a nozzle probe."""
+    # v0.13 upstream PrinterProbe builds its own ProbeEndstopWrapper; we
+    # delegate everything to the PRTouch wrapper instead (kalico-style API).
+    def __init__(self, config, prtouch):
+        self.printer = config.get_printer()
+        self.mcu_probe = prtouch
+        self.cmd_helper = probe.ProbeCommandHelper(config, self,
+                                                   prtouch.query_endstop)
+        self.probe_offsets = probe.ProbeOffsetsHelper(config)
+        self.probe_session = probe.ProbeSessionHelper(config, prtouch)
 
     def _probe(self, speed, gcmd):
         epos, is_good = self.probing_move(speed, gcmd)
@@ -248,9 +257,11 @@ class PRTouchEndstopWrapper:
             'PRTOUCH_SCRUB', self.cmd_PRTOUCH_SCRUB,
             desc=self.cmd_PRTOUCH_SCRUB_help)
 
+        # v0.13 port: always expose the prtouch chip so stepper_z can use
+        # endstop_pin: prtouch:z_virtual_endstop (register_as_probe True or not).
+        self.ppins.register_chip('prtouch', self)
         if not self.register_as_probe:
             # Alternate chip so carto (or another probe) can own "probe".
-            self.ppins.register_chip('prtouch', self)
             # PrinterProbe normally arms via these; wire them ourselves.
             self.printer.register_event_handler(
                 'homing:homing_move_begin', self._handle_homing_move_begin)
@@ -392,6 +403,11 @@ class PRTouchEndstopWrapper:
             'last_ack_err': None if last is None else last.get('err', 0),
             'last_ack_oid': None if last is None else last.get('oid'),
         }
+
+    def query_endstop(self, print_time=None):
+        if print_time is None:
+            print_time = self.printer.lookup_object('toolhead').get_last_move_time()
+        return bool(self.mcu_endstop.query_endstop(print_time))
 
     def _query_swap_triggered(self):
         toolhead = self.printer.lookup_object('toolhead')
@@ -649,7 +665,7 @@ class PRTouchEndstopWrapper:
         except Exception:
             logging.exception("prtouch: multi_probe_end after command error")
 
-    def probing_move(self, pos, speed, gcmd):
+    def probing_move(self, pos, speed, gcmd=None):
         homing = self.printer.lookup_object('homing')
         toolhead = self.printer.lookup_object('toolhead')
         start_z = toolhead.get_position()[2]

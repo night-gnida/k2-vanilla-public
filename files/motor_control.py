@@ -3487,6 +3487,15 @@ class MotorControl(MotorControlDebugSurfaceMixin):
             self._startup_step_index += 1
             return self.reactor.monotonic()
         except Exception as exc:
+            # K2 base: axes absent from the RS485 bus (z/z1 on base K2) made
+            # discovery steps fatal. Log and skip - motors keep working via
+            # step/dir; closed-loop tuning applies to discovered axes only.
+            _klog(
+                "startup step failed (continuing): %s (%s)",
+                step_name, exc)
+            self._startup_step_index += 1
+            return self.reactor.monotonic()
+        except Exception as exc:
             failure = self._format_startup_failure(step_name, exc)
             self._startup_error = failure
             _klog(
