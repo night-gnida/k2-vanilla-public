@@ -20,13 +20,14 @@ class ForceStopHoming:
         toolhead = self.printer.lookup_object("toolhead")
         homing = self.printer.lookup_object("homing", None)
         # v0.13 upstream lacks the kalico homing-session API; degrade safely.
-        def _kalico(name):
-            return hasattr(homing, name) and getattr(homing, name)
+        def _flag(name):
+            fn = getattr(homing, name, None)
+            return bool(fn()) if callable(fn) else False
         homing_active = bool(
             homing is not None
             and (
-                _kalico("has_active_homing_session")()
-                or _kalico("is_homing_abort_in_progress")()
+                _flag("has_active_homing_session")
+                or _flag("is_homing_abort_in_progress")
                 or getattr(homing, "active_hmove", None) is not None
             ))
         drip_active = bool(

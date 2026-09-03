@@ -8,6 +8,7 @@ Usage:
 
 Env: K2_HOST (default 192.168.1.10), K2_USER (root), K2_PASS (creality_2024)
 """
+import json
 import os
 import socket
 import sys
