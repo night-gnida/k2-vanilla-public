@@ -117,6 +117,10 @@ do_extras() {
     sed -i 's/ -flto -fwhole-program -fno-use-linker-plugin//'         "$SRC_DIR/klippy/chelper/__init__.py"
     grep -q "flto" "$SRC_DIR/klippy/chelper/__init__.py" && die "LTO patch failed" || true
     "$HOST_PY" "$HERE/../files/patch_v013.py" "$SRC_DIR" || die "v0.13 patches failed"
+    # Relax multi-MCU trsync timeout (slow dual-A7 host; same fix AD5M mods use
+    # for E0011-style "Lost communication with MCU" on upstream hosts).
+    sed -i 's/TRSYNC_TIMEOUT = 0.025/TRSYNC_TIMEOUT = 0.05/'         "$SRC_DIR/klippy/mcu.py"
+    grep -q "TRSYNC_TIMEOUT = 0.05" "$SRC_DIR/klippy/mcu.py"         || die "TRSYNC patch failed"
     # Prebuilt hard-float c_helper.so (cross-built for this SoC, glibc 2.29).
     # Newest mtime beats sources -> klippy skips its own (unsupported) build.
     if [ -f "$HERE/../files/c_helper.so" ]; then
@@ -142,7 +146,7 @@ USE_PROCD=1
 start_service() {
     procd_open_instance
     procd_set_param command $HOST_PY $SRC_DIR/klippy/klippy.py $CFG_DIR/printer.cfg -a $api_sock -l $LOG_FILE
-    procd_set_param env CC=/opt/bin/gcc PATH=/opt/bin:/opt/sbin:/bin:/sbin:/usr/bin:/usr/sbin
+    procd_set_param env CC=/opt/bin/gcc MALLOC_ARENA_MAX=2 PATH=/opt/bin:/opt/sbin:/bin:/sbin:/usr/bin:/usr/sbin
     procd_set_param respawn 360 5 0
     procd_set_param stdout 0
     procd_set_param stderr 0
