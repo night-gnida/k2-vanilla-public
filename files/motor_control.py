@@ -312,12 +312,15 @@ class MotorCutCalibrationHelper:
         kin.rails[0].position_min = position_min
         _, current_max = kin.limits[0]
         kin.limits[0] = (position_min, current_max)
-        kin.axes_min = toolhead.Coord(
-            position_min,
-            kin.axes_min.y,
-            kin.axes_min.z,
-            kin.axes_min.e,
-        )
+        if hasattr(toolhead, "Coord"):
+            kin.axes_min = toolhead.Coord(
+                position_min,
+                kin.axes_min.y,
+                kin.axes_min.z,
+                kin.axes_min.e,
+            )
+        else:  # v0.13: axes_min is a plain list
+            kin.axes_min[0] = position_min
 
     def _restore_cut_x_limit(self, toolhead, position_min, kin_limits, axes_min):
         kin = toolhead.kin
@@ -3756,6 +3759,10 @@ class MotorControl(MotorControlDebugSurfaceMixin):
 
     def _get_homing_session_state(self):
         homing = self.printer.lookup_object("homing")
+        if not hasattr(homing, "has_active_homing_session"):
+            # v0.13 upstream homing has no session API
+            return {"active": False, "aborted": False,
+                    "abort_in_progress": False}
         return {
             "active": bool(homing.has_active_homing_session()),
             "aborted": bool(homing.is_homing_session_aborted()),

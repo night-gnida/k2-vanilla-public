@@ -121,6 +121,11 @@ do_extras() {
     # for E0011-style "Lost communication with MCU" on upstream hosts).
     sed -i 's/TRSYNC_TIMEOUT = 0.025/TRSYNC_TIMEOUT = 0.05/'         "$SRC_DIR/klippy/mcu.py"
     grep -q "TRSYNC_TIMEOUT = 0.05" "$SRC_DIR/klippy/mcu.py"         || die "TRSYNC patch failed"
+    # GD32 needs 60-90s to reboot after the CRC-mismatch reset while stock
+    # connect budget is 90s total with a 5s identify wait - extend both.
+    sed -i 's/if self.reactor.monotonic() > start_time + 90.:/if self.reactor.monotonic() > start_time + 300.:/'         "$SRC_DIR/klippy/serialhdl.py"
+    sed -i 's/completion.wait(self.reactor.monotonic() + 5.)/completion.wait(self.reactor.monotonic() + 15.)/'         "$SRC_DIR/klippy/serialhdl.py"
+    grep -q "start_time + 300." "$SRC_DIR/klippy/serialhdl.py"         || die "serialhdl budget patch failed"
     # Prebuilt hard-float c_helper.so (cross-built for this SoC, glibc 2.29).
     # Newest mtime beats sources -> klippy skips its own (unsupported) build.
     if [ -f "$HERE/../files/c_helper.so" ]; then
@@ -173,10 +178,12 @@ wait_ready() {
     # dance: the MCU forgets its config CRC, klippy restarts it and retries;
     # the GD32 also needs ~60-90s to come back after 'reset'). Only success
     # or the full timeout decides.
-    say "Waiting up to 420s for 'Printer is ready'"
+    # v0.13 does NOT log a ready banner - readiness is only visible via the
+    # Moonraker API (klippy_state: ready).
+    say "Waiting up to 420s for klippy_state=ready"
     i=0
     while [ $i -lt 420 ]; do
-        if grep -q "Printer is ready" "$LOG_FILE" 2>/dev/null; then
+        if wget -qO- "http://127.0.0.1:7125/printer/info" 2>/dev/null                 | grep -q '"klippy_state":[[:space:]]*"ready"'; then
             say "VANILLA KLIPPER IS UP"
             return 0
         fi

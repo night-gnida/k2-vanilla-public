@@ -1,0 +1,43 @@
+## power_loss_recovery.py (disabled on base - informational)
+  [v013] object: lookup_object('z_align') not resolvable in host (power_loss_recovery.py:1161)
+  [v013] object: lookup_object('z_align') not resolvable in host (power_loss_recovery.py:1606)
+  [v013] object: lookup_object('z_align') not resolvable in host (power_loss_recovery.py:1637)
+  [v013] object: lookup_object('z_align') not resolvable in host (power_loss_recovery.py:1642)
+  [v013] object: lookup_object('z_align') not resolvable in host (power_loss_recovery.py:1712)
+  [v013] object: lookup_object('z_align') not resolvable in host (power_loss_recovery.py:1714)
+  [v013] object: lookup_object('z_align') not resolvable in host (power_loss_recovery.py:1635)
+  [v013] object: lookup_object('z_align') not resolvable in host (power_loss_recovery.py:1713)
+  [stock] method: capture_reference_frame (from 'z_align') missing in host extras/z_align.py (power_loss_recovery.py:1161)
+  [stock] method: validate_reference_frame (from 'z_align') missing in host extras/z_align.py (power_loss_recovery.py:1606)
+  [stock] method: wait_prepare_complete (from 'z_align') missing in host extras/z_align.py (power_loss_recovery.py:1637)
+  [stock] method: perform_blocking_rise (from 'z_align') missing in host extras/z_align.py (power_loss_recovery.py:1642)
+  [stock] method: is_active (from 'z_align') missing in host extras/z_align.py (power_loss_recovery.py:1712)
+  [stock] method: invalidate_homing_state (from 'z_align') missing in host extras/z_align.py (power_loss_recovery.py:1714)
+  [stock] method: start_prepare (from 'z_align') missing in host extras/z_align.py (power_loss_recovery.py:1635)
+  [stock] method: abort_internal (from 'z_align') missing in host extras/z_align.py (power_loss_recovery.py:1713)
+## config[bed_mesh] vs v013 (extras/bed_mesh.py): mesh_pps, probe_count
+## config[delayed_gcode] vs v013 (extras/delayed_gcode.py): gcode
+## config[gcode_macro] vs v013 (extras/gcode_macro.py): gcode, variable_aux_fans, variable_heat_soak, variable_nozzle_temp, variable_part_cooling
+## config[heater_bed] vs v013 (extras/heater_bed.py): control, heater_pin, max_power, max_temp, min_temp, sensor_pin, sensor_type
+## config[input_shaper] vs v013 (extras/input_shaper.py): shaper_freq_x, shaper_freq_y, shaper_type_x, shaper_type_y
+## config[lis2dw] vs v013 (extras/lis2dw.py): axes_map, spi_software_miso_pin, spi_software_mosi_pin, spi_software_sclk_pin, spi_speed
+## config[screws_tilt_adjust] vs v013 (extras/screws_tilt_adjust.py): horizontal_move_z, screw1, screw1_name, screw2, screw2_name, screw3, screw3_name, screw4, screw4_name, speed
+## config[temperature_fan] vs v013 (extras/temperature_fan.py): cycle_time, hardware_pwm, max_power, pin, sensor_pin, sensor_type, shutdown_speed
+## config[temperature_sensor] vs v013 (extras/temperature_sensor.py): sensor_pin, sensor_type
+## config[tmc2208] vs v013 (extras/tmc2208.py): run_current, sense_resistor, stealthchop_threshold, uart_pin
+## config[virtual_sdcard] vs v013 (extras/virtual_sdcard.py): on_error_gcode
+## config[bed_mesh] vs stock (extras/bed_mesh.py): adaptive_margin, mesh_pps, probe_count, speed, zero_reference_position
+## config[box] vs stock (extras/box.py): box_count, check_cut_pos_x_max, check_cut_pos_x_min, clean_pad_back_y, clean_pad_front_y, clean_pad_left_x, clean_pad_right_x, clean_velocity, cut_pos_y, pre_cut_pos_x, travel_velocity, wastebin_pos_x, wastebin_pos_y, z_velocity
+## config[delayed_gcode] vs stock (extras/delayed_gcode.py): gcode
+## config[gcode_macro] vs stock (extras/gcode_macro.py): gcode, variable_aux_fans, variable_heat_soak, variable_nozzle_temp, variable_part_cooling
+## config[heater_bed] vs stock (extras/heater_bed.py): control, heater_pin, max_power, min_temp, sensor_pin, sensor_type
+## config[input_shaper] vs stock (extras/input_shaper.py): shaper_freq_x, shaper_freq_y, shaper_type_x, shaper_type_y
+## config[lis2dw] vs stock (extras/lis2dw.py): cs_pin, spi_software_miso_pin, spi_software_mosi_pin, spi_software_sclk_pin, spi_speed
+## config[motor_control] vs stock (extras/motor_control.py): cut_pos_offset, x_controller_cur_filter_param_en, x_param_stall_pos_err_rad, y_controller_cur_filter_param_en, y_param_stall_pos_err_rad
+## config[prtouch] vs stock (extras/prtouch.py): home_max_noisy, home_max_samples, home_sample_range, home_samples, home_travel_speed, home_xy, home_z_hop, lift_speed, pres_ded_tkms, pres_tri_fter, pres_tri_hold, register_as_probe, sample_retract_dist, samples, samples_result, samples_tolerance, samples_tolerance_retries, scrub_detect_deflection, scrub_detect_hold_ratio, scrub_no_tab_depth, scrub_speed, scrub_tab_depth, scrub_x_end, scrub_x_start, scrub_y_max, scrub_y_min, speed, thermal_expansion, z_offset
+## config[serial_485] vs stock (extras/serial_485.py): baud, serial
+## config[temperature_fan] vs stock (extras/temperature_fan.py): cycle_time, hardware_pwm, max_power, pin, sensor_pin, sensor_type, shutdown_speed
+## config[temperature_sensor] vs stock (extras/temperature_sensor.py): sensor_pin, sensor_type
+## config[tmc2208] vs stock (extras/tmc2208.py): run_current, sense_resistor, stealthchop_threshold, uart_pin
+## config[virtual_sdcard] vs stock (extras/virtual_sdcard.py): on_error_gcode
+--- audit done ---

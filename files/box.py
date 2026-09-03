@@ -2057,8 +2057,11 @@ class Box:
         kin = toolhead.kin
         kin.rails[0].position_min = minimum
         kin.limits[0] = (minimum, kin.limits[0][1])
-        kin.axes_min = toolhead.Coord(
-            minimum, kin.axes_min.y, kin.axes_min.z, kin.axes_min.e)
+        if hasattr(toolhead, "Coord"):
+            kin.axes_min = toolhead.Coord(
+                minimum, kin.axes_min.y, kin.axes_min.z, kin.axes_min.e)
+        else:  # v0.13: axes_min is a plain list
+            kin.axes_min[0] = minimum
 
     def _wait_cut_return(self, timeout):
         deadline = self.reactor.monotonic() + timeout

@@ -19,11 +19,14 @@ class ForceStopHoming:
     def _get_runtime_state(self):
         toolhead = self.printer.lookup_object("toolhead")
         homing = self.printer.lookup_object("homing", None)
+        # v0.13 upstream lacks the kalico homing-session API; degrade safely.
+        def _kalico(name):
+            return hasattr(homing, name) and getattr(homing, name)
         homing_active = bool(
             homing is not None
             and (
-                homing.has_active_homing_session()
-                or homing.is_homing_abort_in_progress()
+                _kalico("has_active_homing_session")()
+                or _kalico("is_homing_abort_in_progress")()
                 or getattr(homing, "active_hmove", None) is not None
             ))
         drip_active = bool(
@@ -34,6 +37,11 @@ class ForceStopHoming:
         homing, drip_active, homing_active = self._get_runtime_state()
         gcode = self.printer.lookup_object("gcode")
         if homing_active:
+            if not hasattr(homing, "request_homing_abort"):
+                gcode.respond_raw(
+                    "!! Force stop not supported on upstream v0.13 homing; "
+                    "use emergency stop if needed")
+                return
             try:
                 result = homing.request_homing_abort(
                     reason="Webhook force-stop aborted homing",
