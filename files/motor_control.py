@@ -2021,25 +2021,42 @@ class MotorAxisController:
                               timeout: float = MOTOR_COMMAND_TIMEOUT) -> dict:
         if mode not in (1, 2):
             raise RuntimeError("XY stall mode must be 1 or 2")
+        packets = []
+        skipped = []
+        for axis in ("x", "y"):
+            try:
+                packets.append(
+                    self.target(axis).set_stall_mode(mode, timeout=timeout))
+            except Exception as exc:
+                skipped.append((axis, repr(exc)))
+        if skipped:
+            logging.warning(
+                "motor_control: homing stall mode skipped axes: %s", skipped)
         return {
             "mode": f"stall{mode}",
-            "packets": [
-                self.target(axis).set_stall_mode(
-                    mode, timeout=timeout)
-                for axis in ("x", "y")
-            ],
+            "packets": packets,
+            "skipped": skipped,
         }
 
     def set_normal_stall_mode(
             self, timeout: float = MOTOR_COMMAND_TIMEOUT) -> dict:
+        packets = []
+        skipped = []
+        for axis in ALL_AXES:
+            try:
+                packets.append(
+                    self.target(axis).set_stall_mode(0x02, timeout=timeout))
+            except Exception as exc:
+                # K2 base: z/z1 slots are unpopulated on the RS485 bus
+                skipped.append((axis, repr(exc)))
+        if skipped:
+            logging.warning(
+                "motor_control: normal stall mode skipped axes: %s", skipped)
         return {
             "mode": "normal_stall",
             "axes": ALL_AXES,
-            "packets": [
-                self.target(axis).set_stall_mode(
-                    0x02, timeout=timeout)
-                for axis in ALL_AXES
-            ],
+            "packets": packets,
+            "skipped": skipped,
         }
 
     def get_axis_stall_mode_raw(self, axis: str,
@@ -2730,7 +2747,45 @@ class MotorControl(MotorControlDebugSurfaceMixin):
              "REQUIRE_EXTRUDER_CLEAR Abort the running gcode block if an "
              "extruder motor protection fault is latched. Tries one clear "
              "attempt before raising."),
+            ("MOTOR_STALL_MODE", self.cmd_MOTOR_STALL_MODE,
+             "MOTOR_STALL_MODE DATA=1|2 Switch X/Y closed-loop motors "
+             "between homing stall mode (1) and normal crash-guard mode (2)"),
+            ("MOTOR_CHECK_PROTECTION_AFTER_HOME",
+             self.cmd_MOTOR_CHECK_PROTECTION_AFTER_HOME,
+             "MOTOR_CHECK_PROTECTION_AFTER_HOME [DATA=11] Report X/Y motor "
+             "protection latches after homing"),
         ))
+
+    def cmd_MOTOR_STALL_MODE(self, gcmd):
+        data = gcmd.get_int("DATA", 2, minval=0, maxval=2)
+        if data == 1:
+            result = self.axes.set_homing_stall_mode(1)
+        else:
+            result = self.axes.set_normal_stall_mode()
+        self.gcode.respond_info(
+            "MOTOR_STALL_MODE %d: %d packets, skipped=%s"
+            % (data, len(result.get("packets", [])),
+               result.get("skipped", [])))
+
+    def cmd_MOTOR_CHECK_PROTECTION_AFTER_HOME(self, gcmd):
+        data = gcmd.get_int("DATA", 11, minval=0, maxval=255)
+        try:
+            result = self.axes.query_protection_status(
+                axes=("x", "y"), data=data, timeout=MOTOR_COMMAND_TIMEOUT)
+        except Exception as exc:
+            self.gcode.respond_info(
+                "MOTOR_CHECK_PROTECTION_AFTER_HOME: bus timeout (%s)"
+                % (repr(exc),))
+            return
+        active = {axis: detail for axis, detail in result.items()
+                  if detail.get("active")}
+        if active:
+            self.gcode.respond_info(
+                "MOTOR_CHECK_PROTECTION_AFTER_HOME: active on %s"
+                % sorted(active))
+        else:
+            self.gcode.respond_info(
+                "MOTOR_CHECK_PROTECTION_AFTER_HOME: clear")
 
     def _register_calibration_commands(self):
         self._register_command_specs((
