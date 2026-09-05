@@ -4482,8 +4482,16 @@ class MotorControl(MotorControlDebugSurfaceMixin):
             return
         if not active or self.printer.is_shutdown():
             return
-        source = f"stall_pin:{active}"
         during_homing = was_homing or self._is_homing_context_active()
+        if during_homing:
+            # Never run blocking 485 queries on the reactor during homing:
+            # the bus is lossy mid-motion and a reactor stall freezes ALL
+            # motion. Stock verifies protection after home only.
+            _klog(
+                "stall event axis=%s during homing - deferred to "
+                "MOTOR_CHECK_PROTECTION_AFTER_HOME", axis)
+            return
+        source = f"stall_pin:{active}"
         try:
             singleton = self.check_protection_code(
                 axis=axis, data=PROTECTION_QUERY_DATA,
