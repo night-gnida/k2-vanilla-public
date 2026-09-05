@@ -107,6 +107,7 @@ do_extras() {
     say "Vendoring K2 extras (GPL-3, Jacob10383/kalico) into klippy/extras"
     for f in "$HERE"/../files/*.py "$HERE"/../files/*.json; do
         [ -e "$f" ] || continue
+        case "$(basename "$f")" in patch_v013.py) continue ;; esac
         cp "$f" "$SRC_DIR/klippy/extras/" || die "copy $f failed"
     done
     # Entware kernel headers break chelper build: linux/can.h needs sa_family_t
@@ -171,6 +172,34 @@ do_switch() {
     make_init
     "$VAN_INIT" enable
     "$VAN_INIT" start
+    install_watchdog
+}
+
+install_watchdog() {
+    # keeps vanilla alive across cold-boot connect races: restarts the
+    # service after repeated connect failures (see scripts/watchdog_loop.sh)
+    local loop="$ROOT/k2setup/k2-vanilla/scripts/watchdog_loop.sh"
+    [ -f "$loop" ] || loop="$HERE/watchdog_loop.sh"
+    [ -f "$loop" ] || return
+    cp "$loop" "$ROOT/k2setup/k2-vanilla/scripts/watchdog_loop.sh" 2>/dev/null
+    cat > /etc/init.d/k2van-watchdog <<WDEOF
+#!/bin/sh /etc/rc.common
+START=99
+STOP=01
+USE_PROCD=1
+start_service() {
+    procd_open_instance
+    procd_set_param command /bin/sh $loop
+    procd_set_param respawn 360 5 0
+    procd_set_param stdout 0
+    procd_set_param stderr 0
+    procd_close_instance
+}
+WDEOF
+    chmod +x /etc/init.d/k2van-watchdog
+    /etc/init.d/k2van-watchdog enable
+    /etc/init.d/k2van-watchdog start
+    say "Watchdog installed (auto-restart on repeated connect failures)"
 }
 
 wait_ready() {
