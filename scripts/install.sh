@@ -183,7 +183,9 @@ wait_ready() {
     say "Waiting up to 420s for klippy_state=ready"
     i=0
     while [ $i -lt 420 ]; do
-        if wget -qO- "http://127.0.0.1:7125/printer/info" 2>/dev/null                 | grep -q '"klippy_state":[[:space:]]*"ready"'; then
+        # Moonraker version differences: stock reports "state", newer
+        # builds "klippy_state" - accept either.
+        if wget -qO- "http://127.0.0.1:7125/printer/info" 2>/dev/null                 | grep -qE '"(klippy_)?state":[[:space:]]*"ready"'; then
             say "VANILLA KLIPPER IS UP"
             return 0
         fi
