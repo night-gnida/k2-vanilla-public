@@ -4412,6 +4412,11 @@ class MotorControl(MotorControlDebugSurfaceMixin):
         }
 
     def note_stall_pin_event(self, axis: str, active: int, eventtime: float):
+        # K2 base: only X/Y motors are on the RS485 bus. Other stall pins
+        # (z1 PA10 = stepper_z enable, etc.) are shared wiring and must not
+        # trigger motor-fault queries.
+        if axis not in ("x", "y"):
+            return
         if not (self._startup_complete and self.is_ready and self.motor_params_init):
             return
         if axis == "x" and self.is_check_cut_pos_start:
@@ -4473,6 +4478,8 @@ class MotorControl(MotorControlDebugSurfaceMixin):
 
     def _reactor_stall_query(self, axis: str, active: int,
                              was_homing: bool = False):
+        if axis not in ("x", "y"):
+            return
         if not active or self.printer.is_shutdown():
             return
         source = f"stall_pin:{active}"
@@ -4494,6 +4501,14 @@ class MotorControl(MotorControlDebugSurfaceMixin):
             _klog(
                 "stall query failed axis=%s active=%s",
                 axis, active, level=logging.exception)
+            if during_homing:
+                # Stock semantics: protection is verified AFTER homing via
+                # MOTOR_CHECK_PROTECTION_AFTER_HOME; a mid-home bus timeout
+                # must not abort the home (485 is lossy during motion).
+                _klog(
+                    "stall query unverified during homing axis=%s - deferred",
+                    axis, level=logging.warning)
+                return
             self._handle_unverified_axis_fault(
                 axis, source, exc, during_homing=during_homing)
 
