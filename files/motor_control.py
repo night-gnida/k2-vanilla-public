@@ -2795,6 +2795,9 @@ class MotorControl(MotorControlDebugSurfaceMixin):
         try:
             result = self.axes.query_protection_status(
                 axes=("x", "y"), data=data, timeout=MOTOR_COMMAND_TIMEOUT)
+            # stock clears latched stall/protection after homing
+            self.axes.clear_fault_latches(axes=("x", "y"), data=5,
+                                          timeout=MOTOR_COMMAND_TIMEOUT)
         except Exception as exc:
             self.gcode.respond_info(
                 "MOTOR_CHECK_PROTECTION_AFTER_HOME: bus timeout (%s)"
@@ -2804,7 +2807,7 @@ class MotorControl(MotorControlDebugSurfaceMixin):
                   if detail.get("active")}
         if active:
             self.gcode.respond_info(
-                "MOTOR_CHECK_PROTECTION_AFTER_HOME: active on %s"
+                "MOTOR_CHECK_PROTECTION_AFTER_HOME: active on %s (latches cleared)"
                 % sorted(active))
         else:
             self.gcode.respond_info(
