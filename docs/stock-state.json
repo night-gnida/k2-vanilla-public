@@ -1,0 +1,269 @@
+{
+ "printer_param": {
+  "z_safe_pause": 0.0,
+  "z_safe_g28": 3.0,
+  "max_x_position": 260.0,
+  "max_y_position": 262.0,
+  "max_z_position": 260.0,
+  "fans": 3,
+  "auto_g29": 0,
+  "fan0_min": 25,
+  "fan1_min": 50,
+  "fan2_min": 100,
+  "fan2_speed": 0,
+  "fan0_speed": 0,
+  "hotend_temp": 0,
+  "e_min_current": 0.27,
+  "bed_steady_temp": [
+   50,
+   70,
+   80,
+   100
+  ],
+  "bed_steady_time": [
+   360,
+   360,
+   480,
+   480
+  ]
+ },
+ "box": {
+  "filament": 1,
+  "state": "connect",
+  "auto_refill": 1,
+  "enable": 1,
+  "filament_useup": 1,
+  "same_material": [
+   [
+    "006005",
+    "000a3ff",
+    [
+     "T1D"
+    ],
+    "PETG"
+   ]
+  ],
+  "map": {
+   "T1A": "T1D",
+   "T1B": "T1B",
+   "T1C": "T1C",
+   "T1D": "T1D",
+   "T2A": "T2A",
+   "T2B": "T2B",
+   "T2C": "T2C",
+   "T2D": "T2D",
+   "T3A": "T3A",
+   "T3B": "T3B",
+   "T3C": "T3C",
+   "T3D": "T3D",
+   "T4A": "T4A",
+   "T4B": "T4B",
+   "T4C": "T4C",
+   "T4D": "T4D"
+  },
+  "T1": {
+   "state": "connect",
+   "filament": "None",
+   "temperature": "31",
+   "dry_and_humidity": "51",
+   "filament_detected": "None",
+   "measuring_wheel": "None",
+   "version": "1.5.0",
+   "sn": "REDACTED",
+   "mode": "0",
+   "vender": [
+    "none",
+    "none",
+    "none",
+    "unknown"
+   ],
+   "remain_len": [
+    "0",
+    "0",
+    "0",
+    "0"
+   ],
+   "color_value": [
+    "-1",
+    "-1",
+    "-1",
+    "000a3ff"
+   ],
+   "material_type": [
+    "-1",
+    "-1",
+    "-1",
+    "006005"
+   ],
+   "uuid": [
+    149,
+    97,
+    48,
+    32,
+    132,
+    35,
+    179,
+    24,
+    71,
+    52,
+    56,
+    49
+   ],
+   "change_color_num": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "type": "CFS",
+   "slot_rfid_scrap": "0"
+  },
+  "T2": {
+   "state": "None",
+   "filament": "None",
+   "temperature": "None",
+   "dry_and_humidity": "None",
+   "filament_detected": "None",
+   "measuring_wheel": "None",
+   "version": "-1",
+   "sn": "-1",
+   "mode": "-1",
+   "vender": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "remain_len": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "color_value": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "material_type": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "uuid": "None",
+   "change_color_num": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "type": "None",
+   "slot_rfid_scrap": "None"
+  },
+  "T3": {
+   "state": "None",
+   "filament": "None",
+   "temperature": "None",
+   "dry_and_humidity": "None",
+   "filament_detected": "None",
+   "measuring_wheel": "None",
+   "version": "-1",
+   "sn": "-1",
+   "mode": "-1",
+   "vender": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "remain_len": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "color_value": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "material_type": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "uuid": "None",
+   "change_color_num": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "type": "None",
+   "slot_rfid_scrap": "None"
+  },
+  "T4": {
+   "state": "None",
+   "filament": "None",
+   "temperature": "None",
+   "dry_and_humidity": "None",
+   "filament_detected": "None",
+   "measuring_wheel": "None",
+   "version": "-1",
+   "sn": "-1",
+   "mode": "-1",
+   "vender": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "remain_len": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "color_value": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "material_type": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "uuid": "None",
+   "change_color_num": [
+    "-1",
+    "-1",
+    "-1",
+    "-1"
+   ],
+   "type": "None",
+   "slot_rfid_scrap": "None"
+  }
+ },
+ "custom_macro": {},
+ "qmode": {
+  "flag": 0,
+  "accel": 0,
+  "accel_to_decel": 0,
+  "velocity": 0,
+  "square_corner_velocity": 0,
+  "pressure_advance": 0.0,
+  "fan0_value": 0.0,
+  "fan1_value": 0.0,
+  "fan2_value": 0.0,
+  "speed_factor": 0,
+  "max_accel": 2500,
+  "max_accel_to_decel": 2500
+ }
+}
