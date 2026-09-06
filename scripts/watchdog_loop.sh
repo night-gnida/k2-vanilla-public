@@ -57,7 +57,10 @@ while :; do
         fi
         restarts=$((restarts + 1))
         echo "restarts=$restarts" > "$STATE"
-        log "connect failures x$fails - restarting klipper-vanilla (attempt $restarts/$MAX_RESTARTS)"
+        log "connect failures x$fails - mcu_reset + restarting klipper-vanilla (attempt $restarts/$MAX_RESTARTS)"
+        /etc/init.d/klipper_mcu stop 2>/dev/null
+        /etc/init.d/klipper_mcu start 2>/dev/null
+        sleep 2
         /etc/init.d/klipper-vanilla restart 2>/dev/null
         fails=0
     fi

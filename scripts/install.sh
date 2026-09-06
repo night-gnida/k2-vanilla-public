@@ -107,7 +107,7 @@ do_extras() {
     say "Vendoring K2 extras (GPL-3, Jacob10383/kalico) into klippy/extras"
     for f in "$HERE"/../files/*.py "$HERE"/../files/*.json; do
         [ -e "$f" ] || continue
-        case "$(basename "$f")" in patch_v013.py) continue ;; esac
+        case "$(basename "$f")" in patch_v013.py|remote.py) continue ;; esac
         cp "$f" "$SRC_DIR/klippy/extras/" || die "copy $f failed"
     done
     # Entware kernel headers break chelper build: linux/can.h needs sa_family_t
@@ -170,6 +170,11 @@ do_switch() {
     "$stock_init" disable 2>/dev/null
     echo "$stock_init" > "$STATE"
     make_init
+    say "mcu_reset: restarting klipper_mcu daemon before klippy (better-init recipe)"
+    /etc/init.d/klipper_mcu stop 2>/dev/null
+    /etc/init.d/klipper_mcu start 2>/dev/null
+    sleep 2
+    pidof klipper_mcu >/dev/null || say "WARNING: klipper_mcu daemon not detected"
     "$VAN_INIT" enable
     "$VAN_INIT" start
     install_watchdog
