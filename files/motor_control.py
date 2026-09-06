@@ -2780,15 +2780,35 @@ class MotorControl(MotorControlDebugSurfaceMixin):
         ))
 
     def cmd_MOTOR_STALL_MODE(self, gcmd):
+        # Some motor drivers (Y on base K2) lack direct func 0x11
+        # stall-mode; the universal path is the runtime param write
+        # <axis>_param_stall_mode=<v> (same bytes stock sends).
         data = gcmd.get_int("DATA", 2, minval=0, maxval=2)
-        if data == 1:
-            result = self.axes.set_homing_stall_mode(1)
+        ok_axes = []
+        skipped = []
+        for axis in ("x", "y"):
+            param = self._lookup_param_by_cfg_key(
+                "%s_param_stall_mode" % axis)
+            for attempt in range(5):
+                try:
+                    self._write_param_with_verification(
+                        param, data, timeout=MOTOR_COMMAND_TIMEOUT)
+                    ok_axes.append(axis)
+                    break
+                except Exception as exc:
+                    logging.warning(
+                        "motor_control: stall mode param axis=%s "
+                        "attempt=%d: %s", axis, attempt + 1, repr(exc))
+                    time.sleep(2)
+            else:
+                skipped.append((axis, "no ack after 5 attempts"))
+        if skipped:
+            self.gcode.respond_info(
+                "MOTOR_STALL_MODE %d: ok=%s skipped=%s"
+                % (data, ok_axes, skipped))
         else:
-            result = self.axes.set_normal_stall_mode()
-        self.gcode.respond_info(
-            "MOTOR_STALL_MODE %d: %d packets, skipped=%s"
-            % (data, len(result.get("packets", [])),
-               result.get("skipped", [])))
+            self.gcode.respond_info(
+                "MOTOR_STALL_MODE %d: applied to %s" % (data, ok_axes))
 
     def cmd_MOTOR_CHECK_PROTECTION_AFTER_HOME(self, gcmd):
         data = gcmd.get_int("DATA", 11, minval=0, maxval=255)
