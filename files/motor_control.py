@@ -12,6 +12,7 @@ import logging
 import math
 import re
 import struct
+import time
 from dataclasses import asdict, dataclass
 from extras import motion_limits, serial_485
 from functools import partial
@@ -2024,11 +2025,21 @@ class MotorAxisController:
         packets = []
         skipped = []
         for axis in ("x", "y"):
-            try:
-                packets.append(
-                    self.target(axis).set_stall_mode(mode, timeout=timeout))
-            except Exception as exc:
-                skipped.append((axis, repr(exc)))
+            ok = False
+            for attempt in range(5):
+                try:
+                    packets.append(
+                        self.target(axis).set_stall_mode(
+                            mode, timeout=timeout))
+                    ok = True
+                    break
+                except Exception as exc:
+                    logging.warning(
+                        "motor_control: homing stall mode axis=%s "
+                        "attempt=%d: %s", axis, attempt + 1, repr(exc))
+                    time.sleep(2)
+            if not ok:
+                skipped.append((axis, "no ack after 5 attempts"))
         if skipped:
             logging.warning(
                 "motor_control: homing stall mode skipped axes: %s", skipped)
@@ -2043,12 +2054,24 @@ class MotorAxisController:
         packets = []
         skipped = []
         for axis in ALL_AXES:
-            try:
-                packets.append(
-                    self.target(axis).set_stall_mode(0x02, timeout=timeout))
-            except Exception as exc:
+            if axis not in ("x", "y"):
                 # K2 base: z/z1 slots are unpopulated on the RS485 bus
-                skipped.append((axis, repr(exc)))
+                continue
+            ok = False
+            for attempt in range(5):
+                try:
+                    packets.append(
+                        self.target(axis).set_stall_mode(
+                            0x02, timeout=timeout))
+                    ok = True
+                    break
+                except Exception as exc:
+                    logging.warning(
+                        "motor_control: stall mode axis=%s attempt=%d: %s",
+                        axis, attempt + 1, repr(exc))
+                    time.sleep(2)
+            if not ok:
+                skipped.append((axis, "no ack after 5 attempts"))
         if skipped:
             logging.warning(
                 "motor_control: normal stall mode skipped axes: %s", skipped)
