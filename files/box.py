@@ -1943,8 +1943,19 @@ class Box:
                 % (CLEAN_LIMIT_VELOCITY, CLEAN_LIMIT_ACCEL,
                    CLEAN_MINIMUM_CRUISE_RATIO, CLEAN_LIMIT_SCV))
             wastebin = "X%g Y%g" % (self.wastebin_x, self.wastebin_y)
+            # k2-vanilla (F021): clamp sweep to axis limits — upstream
+            # hardcodes Plus-sized Y350/X300, which aborts on a 260/296.5 bed
+            kstatus = self.printer.lookup_object("kinematics").get_status(
+                self.reactor.monotonic())
+            kmin, kmax = kstatus["axis_minimum"], kstatus["axis_maximum"]
+
+            def _clamp(axis, value):
+                return max(kmin[axis], min(kmax[axis], value))
+
+            sweep_y = "Y%g" % (_clamp(1, 350.0),)
+            sweep_x = "X%g" % (_clamp(0, 300.0),)
             for move in (
-                    wastebin, "Y350", "X300", "Y50", "X50", wastebin):
+                    wastebin, sweep_y, sweep_x, "Y50", "X50", wastebin):
                 self.gcode.run_script_from_command(
                     "G0 %s F%.0f" % (move, self.travel_velocity))
             toolhead.wait_moves()
