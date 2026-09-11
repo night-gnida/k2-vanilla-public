@@ -1,0 +1,123 @@
+# Журнал Этапа 1 — первая полная печать (живая работа)
+
+Формат: время (2026-09-08/09), шаг, что делали, результат.
+Режим: гибрид (SSH без вопросов; движение/нагрев — по ОК «начинай/продолжай»).
+
+## Подготовка железа (принтер оказался на стоке)
+
+- **00:00 коннект.** Принтер в сети (192.168.1.10), запущен СТОК klippy
+  (`/usr/share/klipper`). Копии репо на принтере НЕТ: `/mnt/UDISK/k2setup/`
+  содержит только `capture/`, `/opt` (Entware) снесён, `wget` в busybox
+  отсутствует. Сохранился только стоковый `klippy-env` (cffi+greenlet OK).
+  Вывод: после 6 сентября система была сброшена/обновлена — ставим с нуля.
+- **00:01 доработка install.sh** (репо):
+  - Entware больше не обязателен, если есть прекомпилированный
+    `files/c_helper.so` (гейт + do_deps);
+  - `do_fetch`: поддержка локального тарбола
+    `$ROOT/k2setup/klipper-$TAG.tar.gz` (или `K2_VANILLA_TARBALL`), fallback
+    на codeload-скачивание;
+  - экстракт перенесён с `/tmp` (ramdisk 244 МБ, klipper не влезает —
+    первый прогон упёрся в ENOSPC) на `/mnt/UDISK/k2setup/extract`;
+  - `wait_ready`: wget → HOST_PY urllib (wget отсутствует);
+  - `watchdog_loop.sh`: wget → /usr/bin/python3 urllib.
+- **00:02 деплой.** push config/, files/, scripts/ →
+  `/mnt/UDISK/k2setup/k2-vanilla/`, тарбол v0.13.0 →
+  `/mnt/UDISK/k2setup/klipper-v0.13.0.tar.gz` (27 393 702 B, md5 совпал).
+  Грабли: Git Bash искажал `/mnt/...` аргументы (MSYS-конверсия) — первый
+  пуш ушёл в `/root/C:/Program Files/...`, вычищен; дальше все пуски с
+  `MSYS_NO_PATHCONV=1`. Вторые грабли: `remote.py push` кладёт файл под
+  ЛОКАЛЬНЫМ именем в dirname удалённого пути (arcname = basename(local)),
+  имя удалённого файла игнорируется.
+- **00:03 установка.** Прогон 1 упал: экстракт klipper в /tmp → ENOSPC
+  (утёкший тарбол+дерево из этого же прогона забили /tmp на 100%, вычищено).
+  Прогон 2: скачал тарбол с codeload (интернет у принтера есть), экстракт на
+  UDISK, extras вендорены, lis2dw пропатчен, c_helper.so установлен, конфиги
+  в `config-vanilla/`, сток отключён, vanilla стартовала, watchdog
+  установлен.
+
+## Готовность и проверки
+
+- **00:05 VANILLA READY.** Moonraker: `state: ready`,
+  `klippy_path: /mnt/UDISK/klipper-vanilla`, конфиг из `config-vanilla/`.
+- **00:06 конфиг живой:** `configfile.settings.input_shaper` =
+  **52.4/45.4 MZV** — новые значения применились. Ошибок конфига в логе нет
+  (grep ловит только тексты макросов). Спам `shakehands` от стокового экрана
+  — безвреден (форк-эндпоинт, которого нет в v0.13).
+- **00:07 транспорт.** `remote.py gcode` (heredoc в /tmp/gc.py) не работает
+  — пустой вывод. Написан `scripts/pr_gcode.py` (заливается на принтер как
+  `/tmp/g.py`): UDS gcode со стримингом ответов + moonraker objects query.
+  Обнаружено и задокументировано: /root (overlay) имеет лаг видимости новых
+  файлов — хелпер живёт в /tmp.
+
+## Железный цикл
+
+- **00:15 G28 → `homed_axes: xyz`.** Хоминг мягкий. Известный косметический
+  артефакт: post-home protection-чек не дождался ответа X-мотора
+  (`addr=0x81 func=0x0C`, ретраи 485 истрачены) — состояние чистое
+  (`motor_ready: true, is_homing: false`), на готовность не влияет.
+  Факт в копилку «485-шина капризна» для Этапа 3.
+- **00:16 cut_pos_x применился:** `motor_control.cut = {state: true,
+  pos_x: -7.8}` — X position_min расширен до −7.8 (резак может выходить за
+  X0, как в стоке). CFS: `state: connect, filament: 1` — бокс жив, филамент
+  в хабе. Поллинг бокса работает.
+- **00:17 калибровка меша `default`** — выполнена: стол 60°C, сопло 150°C,
+  G28 Z, BED_MESH_CALIBRATE PROFILE=default (полные 11×11).
+  Результат: −0.150..+0.330 — совпадение со сток-захватом (−0.156..+0.335)
+  в пределах ~6 мкм. SAVE_CONFIG не записал (старый блокер; pending items
+  содержат только auto_addr — профиль bed_mesh до autosave не доезжает,
+  расследование в Этапе 2). Обход: секция [bed_mesh default] вынесена в
+  отдельный config/mesh.cfg и грузится инклюдом — профиль переживает рестарт.
+
+## Сессия 2026-09-09 (вечер): восстановление + правки до печати
+
+Принтер после очередного сток-сброса (Entware/kit стёрты) — полный
+реинсталл через доработанный install.sh, затем правки перед первой печатью.
+
+- **Установка.** install.sh доработан: Entware не нужен (гейт + do_deps
+  пропускаются при наличии files/c_helper.so), do_fetch умеет локальный
+  тарбол ($ROOT/k2setup/klipper-$TAG.tar.gz), экстракт перенесён с /tmp
+  (ramdisk 244 МБ — klipper не влезал, ENOSPC) на UDISK, wait_ready без
+  wget (HOST_PY urllib), watchdog на python3. Vanilla ready, шейперы
+  52.4/45.4 живые, CFS connect, мягкий G28.
+- **DXC-2** (Phaetus, редуктор 5:1 на стоковом E-серво; мотор остался,
+  сенсоры runout/cutter перенесены в новый корпус): конфиг структурно готов
+  (E как обычный степпер PB5/PB4/PB2; пустой UUID E на 485 — норма).
+  retract_velocity 3000 → 60 мм/мин (требование Phaetus: G0 E-40
+  F1500→F60). rotation_distance 6.9 (сток) — КАЛИБРОВКА перед печатью.
+  PA 0.038 пока, калибровка в Этапе 3.
+- **Правки до печати:** gcode_arcs 0.012 → 1.0 (K2-OpenKlipper: 0.1 давал
+  «Timer too close» на этом SoC — 0.012 скрытый убийца Benchy);
+  START_PRINT в сток-порядке G28 Z → NOZZLE_CLEAN → G28 Z (обход преднатяга
+  тензодатчика после чистки), PRTOUCH_SCRUB из старта убран; taskset 0x2 в
+  make_init (пин klippy на ядро 1 — приём OpenKlipper); NOZZLE_CLEAN-обёртка
+  с подъёмом Z5 (боксовый модуль не поднимает Z сам — от центра до пада
+  скрейпил бы стол).
+- **ГРАБЛИ ДНЯ (все подтверждены живьём):**
+  1. ZOMBIE KLIPPY: `killall klippy.py` не работает — comm процесса
+     «python». Два klippy за /tmp/klippy_uds → moonraker отвечает тем, кто
+     первый захватил сокет (после автоОК-роллбэка инсталлера это СТОК).
+     Симптом: «мой конфиг не применяется» при верифицированных файлах на
+     диске. Лечение: /etc/init.d/klipper-vanilla restart (procd) + проверка
+     маркерных значений (arcs 1.0 есть только в нашем конфиге).
+  2. UDISK FTL STALE PAGES: перезапись файла по тому же иноду минутами
+     читается смесью старых/новых страниц (klippy распарсил секцию меша без
+     хвоста при корректном md5 через шелл). Лечение: критичные файлы — под
+     новым именем (mesh.cfg), install.sh do_config теперь верифицирует md5
+     каждой копии перед рестартом klippy.
+  3. Профиль [bed_mesh default] требует ВЕСЬ набор PROFILE_OPTIONS:
+     version, points, min_x/max_x/min_y/max_y, x_count/y_count,
+     mesh_x_pps/mesh_y_pps, algo, tension (и НЕ включает mesh_min/max).
+- **Итог сессии:** vanilla ready, всё применено и верифицировано (arcs 1.0,
+  шейперы 52.4/45.4, mesh default из mesh.cfg, retract_velocity 60,
+  cut_pos_x −7.8, процесс на ядре 1).
+
+## Далее
+
+- Калибровка rotation_distance DXC-2 (прогрев 240°, 100 мм, поправка RD).
+- Проверка защиты моторов: MOTOR_READ_PARAM x/y_protection_param_prt_track_max_err
+  (наш 0.3 vs сток ID39 X=1000/Y=800 raw по motor_params_map), сверка с
+  заводским F021, MOTOR_CLEAR_ERROR, тест-проезды + осмотр ремня X (удар 09-03).
+- NOZZLE_CLEAN траектория пада (VERIFY 286.5/296.5).
+- Слайс Benchy (Orca 2.4+, профиль «Creality K2»): START_PRINT
+  EXTRUDER_TEMP=240 BED_TEMP=70 MATERIAL=PETG → END_PRINT, печать до конца.
+
