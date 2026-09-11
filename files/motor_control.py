@@ -75,6 +75,9 @@ class MotorControlConfigModel:
     raw_options: dict[str, str | None]
     cut_pos_offset: float
     pins: dict[str, MotorPinConfig]
+    # keep in sync with PROTECTION_POLL_INTERVAL (defined further below;
+    # dataclass defaults must trail non-default fields)
+    protection_poll_interval: float = 60.0
 
     @classmethod
     def from_config(cls, config, param_options=()):
@@ -99,6 +102,9 @@ class MotorControlConfigModel:
         return cls(
             raw_options=raw,
             cut_pos_offset=config.getfloat("cut_pos_offset", 0.4),
+            protection_poll_interval=config.getfloat(
+                "protection_poll_interval", PROTECTION_POLL_INTERVAL,
+                minval=5.0),
             pins=pins,
         )
 
@@ -3575,7 +3581,8 @@ class MotorControl(MotorControlDebugSurfaceMixin):
             self._startup_complete = True
             self.reactor.update_timer(
                 self._protection_poll_timer,
-                self.reactor.monotonic() + PROTECTION_POLL_INTERVAL)
+                self.reactor.monotonic()
+                + self.config_model.protection_poll_interval)
             self.temp_sensors.start()
             _klog("startup complete")
             self.gcode.respond_info(
@@ -4567,12 +4574,13 @@ class MotorControl(MotorControlDebugSurfaceMixin):
                 axis, source, exc, during_homing=during_homing)
 
     def _protection_poll_handler(self, eventtime):
+        interval = self.config_model.protection_poll_interval
         if not self._startup_complete or not self.is_ready:
-            return eventtime + PROTECTION_POLL_INTERVAL
+            return eventtime + interval
         if self._fault_cleanup_pending:
-            return eventtime + PROTECTION_POLL_INTERVAL
+            return eventtime + interval
         self._process_protection_poll()
-        return eventtime + PROTECTION_POLL_INTERVAL
+        return eventtime + interval
 
     def _process_protection_poll(self):
         try:
