@@ -300,8 +300,19 @@ k2-reverse-engineering; the CFS/probe modules are Jacob10383's.
 - Not affiliated with or endorsed by Creality. Use at your own risk; the
   installer keeps the stock environment switchable at all times.
 
-## Support
+## Support & contributing
 
-If this kit saved you time, tips are appreciated:
+Non-material help that moves the project forward:
+
+- ⭐ star the repo — it directly affects visibility;
+- 🧪 test on your K2 (K2C/K2 Combo and K2 Plus especially) — issues with
+  `klippy-vanilla.log` attached are gold;
+- 👀 review the GPL driver modules against stock behaviour; RS-485 wire
+  captures welcome;
+- 📝 proofread/translate the docs, write about the project.
+
+Material support (funds test hardware and debugging time):
 
 - **Bitcoin (BTC)**: `bc1q8u04xphssp6qs0mc5ssk45mlgl7q04mjd35yqp2vurgkwdgehchsw39ge0`
+
+More about the project: [docs/about.md](docs/about.md).
