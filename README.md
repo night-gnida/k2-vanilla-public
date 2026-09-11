@@ -15,8 +15,7 @@ CFS filament system keep working through open-source reimplementations.
 > follow a live stock-print capture (`docs/print-flow-playbook.md`): input
 > shapers 52.4/45.4 MZV, CFS `cut_pos_x −7.8`, mesh-LOAD start flow.
 > Works with the **Phaetus DXC-2** extruder mod (5:1 on the stock E servo).
-> Next milestone: first full print (checklist in
-> `docs/first-print-checklist.md`).
+> Next milestone: first full print (master plan: `docs/roadmap.md`).
 
 ---
 
@@ -104,10 +103,11 @@ k2-vanilla/
 │                              watchdog_loop.sh, remote.py + pr_gcode.py
 │                              (PC-side runners), audit_compat.py,
 │                              write_mesh_cfg.py
-└── docs/                      roadmap.md, stage1-log.md (live session log),
-                               first-print-checklist.md, print-flow-playbook.md
-                               (stock start-sequence capture), stock-live-
-                               printer.cfg + stock-state.json (live captures),
+└── docs/                      roadmap.md (MASTER PLAN — stages, decisions,
+                               risks), stage1-log.md (live session log),
+                               print-flow-playbook.md (stock start-sequence
+                               capture), stock-live-printer.cfg +
+                               stock-state.json (live captures),
                                compat-report.md
 ```
 

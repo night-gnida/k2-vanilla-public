@@ -15,8 +15,7 @@
 > живого захвата стоковой печати (`docs/print-flow-playbook.md`): шейперы
 > 52.4/45.4 MZV, CFS `cut_pos_x −7.8`, стартовый флоу с загрузкой меша.
 > Поддержан мод **Phaetus DXC-2** (5:1 на стоковом E-сервоприводе).
-> Следующая веха — первая полная печать (чек-лист:
-> `docs/first-print-checklist.md`).
+> Следующая веха — первая полная печать (мастер-план: `docs/roadmap.md`).
 
 ---
 
@@ -109,9 +108,10 @@ k2-vanilla/
 │                              watchdog_loop.sh, remote.py + pr_gcode.py
 │                              (раннеры с ПК), audit_compat.py,
 │                              write_mesh_cfg.py
-└── docs/                      roadmap.md, stage1-log.md (живой журнал),
-                               first-print-checklist.md, print-flow-playbook.md
-                               (захват стартовой последовательности стока),
+└── docs/                      roadmap.md (МАСТЕР-ПЛАН — этапы, решения,
+                               риски), stage1-log.md (живой журнал),
+                               print-flow-playbook.md (захват стартовой
+                               последовательности стока),
                                stock-live-printer.cfg + stock-state.json,
                                compat-report.md
 ```
