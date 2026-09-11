@@ -118,16 +118,18 @@
 2. **Надёжность**: собственный PLR для single-Z (kalico-PLR удалён);
    тюнинг защиты моторов по карте ID 39–46 (motor_params_map); диагностика
    485-шины; BELT_TENSION (порт belt_mdl.py); fan_feedback (тахометры,
-   из OpenKlipper); hark_compat shakehands-шим; гвард G29 от master-server;
-   MOTOR_CALIBRATE — уже есть в motor_control.py.
+   из OpenKlipper); hark_compat shakehands-шим; гвард G29 от master-server
+   — ✅ сделано 2026-09-11 ([gcode_macro G29] no-op + [G29_TIME]-handshake,
+   SET_G29_PASSTHROUGH); MOTOR_CALIBRATE — уже есть в motor_control.py.
 3. **Мониторинг и UI**: камера сопла в Fluidd (go2rtc-мост к стоковому
    WebRTC :8000 → :1984 — проверенный для base путь); timelapse
    (TIMELAPSE_TAKE_FRAME + moonraker-timelapse); HelixScreen на тачскрин
    (CFS-поддержку проверять); спул-менеджмент RFID (box_catalog уже есть;
    Fluidd-виджет — только если стоковый Fluidd потянет).
-4. **Скорость/качество**: SHAPER_CALIBRATE — порт форк-версии lis2dw (корень
-   известен: старые сигнатуры MCU-команд; референс
-   toolchain/reference/lis2dw_creality_fork.py); prtouch_mainline
+4. **Скорость/качество**: SHAPER_CALIBRATE — ✅ шим lis2dw перенесён
+   2026-09-11 (files/lis2dw.py, старые сигнатуры; патч-нейтрализатор
+   patch_v013.py удалён; секции включены в printer.cfg; живой
+   SHAPER_CALIBRATE — pending); prtouch_mainline
    (PA15→PC7 trsync) + k2_z_align как альтернатива зонда; PA под DXC-2
    (после RD; диапазон 0.03–0.06) и per-filament PA; профили скорости
    (аналог Qmode: сток max_accel 2500).

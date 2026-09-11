@@ -187,3 +187,35 @@
   EXTRUDER_TEMP=240 BED_TEMP=70 MATERIAL=PETG → END_PRINT, печать до конца.
 
 
+
+## 2026-09-11 — перенос находок реверса (lis2dw, G29-гвард, моторные ручки)
+
+Источник: синтез grant0013/k2-reverse-engineering + Jacob10383/* + kalico/gitstonelabs
+(полный разбор — docs/research-notes.md).
+
+- **lis2dw перенесён** (Stage 3.4): files/lis2dw.py — шим форк-эпохи из
+  Jacob10383/kalico (config_lis2dw oid/spi_oid, query_lis2dw с clock=,
+  стрим lis2dw_data); все API сверены с v0.13.0 (BulkDataQueue:116,
+  BatchBulkHelper, ClockSyncRegression, AccelQueryHelper 1-arg).
+  files/patch_v013.py УДАЛЁН — его regex-анкоры резали бы наш файл
+  (install.sh копирует files/ до патчей); вызов из install.sh убран.
+  В printer.cfg включены [lis2dw] (PA4/PA5/PA7/PA6, axes_map x,z,y) и
+  [resonance_tester] (20–120 Гц, probe_points 130,130,130 — сток-капча).
+  Живой SHAPER_CALIBRATE — pending (после установки этого сет-а).
+- **G29-гвард** (Stage 3.2): [gcode_macro G29] — no-op + сырой handshake
+  `[G29_TIME]Execution time: 0.0 seconds` через RESPOND PREFIX="" (мастер-сервер
+  парсит строку дословно, GcodeCmdResAnl.c:5345); SET_G29_PASSTHROUGH VALUE=1 —
+  временный пропуск реальной калибровки.
+- **Моторные ручки**: [motor_control] protection_poll_interval (дефолт 60 c,
+  мин 5) — периодический 0x0C-полл теперь конфигурируем; в motor_control.cfg —
+  протокольные заметки (слепой 0x0C 0x05 стока не отвечает by design; 8Б-блок
+  all-zero = OK; timeout-класс 2000 мс/4 retry) и закомментированные
+  диагностические ручки protect_en (id 173) + zazen (ids 217–223; гипотеза
+  про idle-трипы у входа в zazen).
+- **Провенанс-поправка**: K2-extra НЕТ ни в KalicoCrew/kalico, ни в текущем
+  Jacob10383/kalico (только config/k2 + lis2dw.py + homing.py); открытые порты —
+  k2-plus-custom-firmware extras v6.18 и gitstonelabs/creality-klipper-unlocked.
+  Дифф наших files/ с v6.18 — в бэклоге.
+- Противоречие к перепроверке: wire-капчи стока показывают доставку func 0x11
+  ОБЕИМ осям (X и Y, ~19 мс), а наш живой вывод — «Y-драйвер не имеет 0x11».
+  Сверить версию мотор-прошивки через 0x0F при следующей сессии.
