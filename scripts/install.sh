@@ -144,7 +144,7 @@ do_extras() {
     rm -f "$SRC_DIR/klippy/extras/power_loss_recovery.py"
     for f in "$HERE"/../files/*.py "$HERE"/../files/*.json; do
         [ -e "$f" ] || continue
-        case "$(basename "$f")" in patch_v013.py|remote.py) continue ;; esac
+        case "$(basename "$f")" in remote.py) continue ;; esac
         cp "$f" "$SRC_DIR/klippy/extras/" || die "copy $f failed"
     done
     # Entware kernel headers break chelper build: linux/can.h needs sa_family_t
@@ -154,7 +154,9 @@ do_extras() {
     # Entware gcc 8.4 LTO produces a .so musl cannot dlopen ("internal error").
     sed -i 's/ -flto -fwhole-program -fno-use-linker-plugin//'         "$SRC_DIR/klippy/chelper/__init__.py"
     grep -q "flto" "$SRC_DIR/klippy/chelper/__init__.py" && die "LTO patch failed" || true
-    "$HOST_PY" "$HERE/../files/patch_v013.py" "$SRC_DIR" || die "v0.13 patches failed"
+    # lis2dw: no post-copy patch anymore - files/lis2dw.py ships the full
+    # fork-era driver (old MCU cmd signatures) and overwrites the upstream
+    # module in the loop above. (patch_v013.py removed 2026-09-11.)
     # Relax multi-MCU trsync timeout (slow dual-A7 host; same fix AD5M mods use
     # for E0011-style "Lost communication with MCU" on upstream hosts).
     sed -i 's/TRSYNC_TIMEOUT = 0.025/TRSYNC_TIMEOUT = 0.05/'         "$SRC_DIR/klippy/mcu.py"

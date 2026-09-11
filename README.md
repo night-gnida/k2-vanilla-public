@@ -73,13 +73,14 @@ recipes (CPU pinning, arc resolution) are adopted here.
   calibration while printing — stock `master-server` injects G29/mesh
   commands and expects a `[G29_TIME]` handshake (grant0013's reverse
   engineering).
-- Resonance testing is disabled: the stock GD32 firmware was built against
-  the **old** lis2dw MCU command signatures (`config_lis2dw oid/spi_oid`,
-  `query_lis2dw oid/clock/rest_ticks`) while upstream v0.13 sends new ones.
-  Root cause identified; the fix (porting the fork-era `lis2dw.py` from
-  [CrealityOfficial/K2_Series_Klipper](https://github.com/CrealityOfficial/K2_Series_Klipper),
-  reference copy in `toolchain/reference/`) is on the roadmap. Factory shaper
-  values (52.4/45.4, from a live stock calibration) are used meanwhile.
+- Resonance testing: the stock GD32 firmware only speaks the **old**
+  lis2dw MCU command signatures (`config_lis2dw oid/spi_oid`,
+  `query_lis2dw oid/clock/rest_ticks`), so the kit ships a fork-era
+  `files/lis2dw.py` compat shim (replaces the upstream module at install);
+  `[lis2dw]` + `[resonance_tester]` are enabled in `printer.cfg` with the
+  stock live-capture values. `SHAPER_CALIBRATE`/`TEST_RESONANCES` are
+  available — after first live validation the factory shapers (52.4/45.4)
+  can be replaced with measured ones.
 - No power-loss recovery: upstream has no PLR, and the Kalico module was
   removed from the kit as dead weight (its z_align choreography was
   Plus-specific). An own single-Z PLR is a roadmap item.
@@ -94,7 +95,7 @@ k2-vanilla/
 ├── README.md / README_RU.md   this file (EN / RU)
 ├── LICENSE                    GPL-3.0
 ├── files/                     open K2 driver modules (GPL-3),
-│                              patch_v013.py (host patches), prebuilt
+│                              lis2dw.py (fork-era accel driver), prebuilt
 │                              c_helper.so, motor_map.json (485 param map)
 ├── config/                    printer.cfg, mesh.cfg (bed mesh), prtouch.cfg,
 │                              box.cfg, macros.cfg, start_print.cfg,
@@ -157,10 +158,10 @@ What the script does, in order:
 2. Extracts the Klipper tree to `/mnt/UDISK/klipper-vanilla` — from the
    local tarball if present, else downloads it (`K2_VANILLA_KLIPPER_TAG`,
    default `v0.13.0`).
-3. Copies `files/*.py` into `klippy/extras/` and applies host patches:
+3. Copies `files/*.py` into `klippy/extras/` (incl. the fork-era
+   `lis2dw.py` accel driver for the stock GD32 fw) and applies host patches:
    musl `can.h` include, LTO removal (Entware builds), `TRSYNC_TIMEOUT`
-   0.025→0.05, serialhdl connect budgets 90→300 s / 5→15 s, `patch_v013.py`
-   (disables the lis2dw accelerometer — see §2).
+   0.025→0.05, serialhdl connect budgets 90→300 s / 5→15 s.
 4. Installs the prebuilt cross-compiled `c_helper.so` (armhf, glibc 2.29 —
    built with Zig; no on-printer compile needed).
 5. Copies `config/*.cfg` to `/mnt/UDISK/printer_data/config-vanilla/` and

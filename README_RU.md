@@ -75,13 +75,14 @@ K2-OpenKlipper от grant0013 — там дошли до 32 % Benchy **вооб�
   [HelixScreen](https://helixscreen.org). Не запускайте калибровки с экрана
   во время печати — стоковый `master-server` сам шлёт G29/меш-команды и
   ждёт хендшейк `[G29_TIME]` (реверс grant0013).
-- Резонансное тестирование отключено: стоковая прошивка GD32 собрана под
-  СТАРЫЕ сигнатуры MCU-команд lis2dw (`config_lis2dw oid/spi_oid`,
-  `query_lis2dw oid/clock/rest_ticks`), а апстрим v0.13 шлёт новые.
-  Причина найдена; лекарство (порт форк-версии `lis2dw.py` из
-  [CrealityOfficial/K2_Series_Klipper](https://github.com/CrealityOfficial/K2_Series_Klipper),
-  референс в `toolchain/reference/`) — в роадмапе. Пока используются
-  заводские значения шейперов (52.4/45.4, из живой сток-калибровки).
+- Резонансное тестирование: стоковая прошивка GD32 понимает только СТАРЫЕ
+  сигнатуры MCU-команд lis2dw (`config_lis2dw oid/spi_oid`,
+  `query_lis2dw oid/clock/rest_ticks`), поэтому в комплекте — шим
+  `files/lis2dw.py` форк-эпохи (заменяет апстримный модуль при установке);
+  секции `[lis2dw]` + `[resonance_tester]` включены в `printer.cfg` со
+  значениями из живой сток-капчи. `SHAPER_CALIBRATE`/`TEST_RESONANCES`
+  доступны — после живой валидации заводские шейперы (52.4/45.4) можно
+  заменить измеренными.
 - Нет восстановления после отключения питания: в апстриме PLR нет, а
   kalico-модуль удалён из комплекта как мёртвый (его z_align-хореография
   была заточена под Plus). Собственный single-Z PLR — в роадмапе.
@@ -97,7 +98,7 @@ k2-vanilla/
 ├── README.md / README_RU.md   этот файл (EN / RU)
 ├── LICENSE                    GPL-3.0
 ├── files/                     открытые K2-драйверы (GPL-3),
-│                              patch_v013.py (хост-патчи),
+│                              lis2dw.py (акселерометр, старый протокол),
 │                              прекомпилированный c_helper.so,
 │                              motor_map.json (карта 485-параметров)
 ├── config/                    printer.cfg, mesh.cfg (меш стола),
@@ -164,10 +165,11 @@ sh /mnt/UDISK/k2setup/k2-vanilla/scripts/install.sh
 2. Разворачивает дерево Klipper в `/mnt/UDISK/klipper-vanilla` — из
    локального тарбола, если есть, иначе скачивает (`K2_VANILLA_KLIPPER_TAG`,
    по умолчанию `v0.13.0`).
-3. Копирует `files/*.py` в `klippy/extras/` и накладывает хост-патчи:
-   include musl `can.h`, удаление LTO (для Entware-сборок),
-   `TRSYNC_TIMEOUT` 0.025→0.05, бюджеты serialhdl 90→300 с / 5→15 с,
-   `patch_v013.py` (отключает акселерометр lis2dw — см. §2).
+3. Копирует `files/*.py` в `klippy/extras/` (включая fork-era
+   `lis2dw.py` — драйвер акселерометра под стоковую GD32-прошивку) и
+   накладывает хост-патчи: include musl `can.h`, удаление LTO (для
+   Entware-сборок), `TRSYNC_TIMEOUT` 0.025→0.05, бюджеты serialhdl
+   90→300 с / 5→15 с.
 4. Ставит прекомпилированный кросс-собранный `c_helper.so` (armhf,
    glibc 2.29 — собран Zig'ом; компиляция на принтере не нужна).
 5. Копирует `config/*.cfg` в `/mnt/UDISK/printer_data/config-vanilla/` и
