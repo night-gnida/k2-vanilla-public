@@ -111,6 +111,31 @@
   шейперы 52.4/45.4, mesh default из mesh.cfg, retract_velocity 60,
   cut_pos_x −7.8, процесс на ядре 1).
 
+## Сессия 2026-09-09 (ночь): K2-OpenKlipper — решение; скилл фиксации
+
+- **Оценка grant0013/K2-OpenKlipper** (детальное исследование + fetch
+  README): GPLv3 ✓; его стенд — наша геометрия F021, несмотря на «Plus» в
+  названии. Стек дошёл до старта печати (вкл. CFS-purge) и 32 % Benchy, но:
+  альфа, 2 коммита, неактивен с 2026-07-29, непроверенные края сам
+  перечисляет. **Решение: не мигрируем** — он подменяет контрол-план
+  (стоковые Moonraker/Fluidd/экран у нас сохранены) и его stall-подход
+  (прямая func 0x11) несовместим с нашим Y-серво. Полный разбор —
+  docs/roadmap.md, раздел «Решение по grant0013/K2-OpenKlipper».
+  Портируем по частям: taskset + arcs 1.0 уже взяты и верифицированы;
+  очередь — hark_compat, update_manager-шим, fan_feedback, k2_z_align,
+  prtouch_mainline (PA15→PC7) как альтернатива зонда.
+- **Создан скилл commit-verified** (~/.agents/skills/commit-verified/) —
+  немедленная фиксация проверенной работы: журналы вперёд → явный стейдж →
+  Conventional Commit с секцией Verified → отчёт; железный закон — нет
+  доказательства, нет коммита. Первый прогон: накопленный сет разбит на
+  4 коммита — 85dbebe (fix: offline install), 21ab0a7 (fix: box.py F021
+  clamp), f8576cf (config: pre-print hardening), 7749b75 (docs). Дерево
+  чистое, push не делался.
+- Железная часть на паузе: принтер пропал из сети во время подготовки
+  калибровки экструдера (хоминг поймал флейк «Endstop y still triggered
+  after retract», затем SSH умер — по опыту, питание). Продолжение с места:
+  FIRMWARE_RESTART → повторный хоминг → этап А калибровки DXC-2.
+
 ## Далее
 
 - Калибровка rotation_distance DXC-2 (прогрев 240°, 100 мм, поправка RD).
@@ -120,4 +145,5 @@
 - NOZZLE_CLEAN траектория пада (VERIFY 286.5/296.5).
 - Слайс Benchy (Orca 2.4+, профиль «Creality K2»): START_PRINT
   EXTRUDER_TEMP=240 BED_TEMP=70 MATERIAL=PETG → END_PRINT, печать до конца.
+
 
