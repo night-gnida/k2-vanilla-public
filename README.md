@@ -299,3 +299,9 @@ k2-reverse-engineering; the CFS/probe modules are Jacob10383's.
   firmware (`F021` config, stock V1.1.6.7); no Creality code is redistributed.
 - Not affiliated with or endorsed by Creality. Use at your own risk; the
   installer keeps the stock environment switchable at all times.
+
+## Support
+
+If this kit saved you time, tips are appreciated:
+
+- **Bitcoin (BTC)**: `bc1q8u04xphssp6qs0mc5ssk45mlgl7q04mjd35yqp2vurgkwdgehchsw39ge0`
