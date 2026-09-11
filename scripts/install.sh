@@ -140,6 +140,8 @@ PYEOF
 
 do_extras() {
     say "Vendoring K2 extras (GPL-3, Jacob10383/kalico) into klippy/extras"
+    # stale module cleanup: PLR was removed from the kit (disabled on base)
+    rm -f "$SRC_DIR/klippy/extras/power_loss_recovery.py"
     for f in "$HERE"/../files/*.py "$HERE"/../files/*.json; do
         [ -e "$f" ] || continue
         case "$(basename "$f")" in patch_v013.py|remote.py) continue ;; esac

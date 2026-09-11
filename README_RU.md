@@ -27,10 +27,10 @@
 │  хост Allwinner T113-i (стоковая OpenWrt/Tina, root)              │
 │    ├─ klippy  ← UPSTREAM klipper3d (тег настраивается, по         │
 │    │            умолчанию v0.13.0), прекомпилированный chelper    │
-│    ├─ 12 вендоренных K2-модулей (GPL-3, из Jacob10383/kalico):    │
+│    ├─ 12 открытых K2-драйверов (GPL-3 © Jacob10383):             │
 │    │   prtouch (тензо-зонд), serial_485, motor_control,           │
 │    │   box×5 (CFS), motion_limits, force_stop_homing,             │
-│    │   led_idle_manager, power_loss_recovery                      │
+│    │   led_idle_manager — все проверены аудитом                  │
 │    ├─ Moonraker (СТОКОВЫЙ, не тронут — тот же сокет, Fluidd       │
 │    │            переподключается сам)                             │
 │    └─ экран Creality / display-server (не трогаем; см. §2)        │
@@ -83,9 +83,9 @@ K2-OpenKlipper от grant0013 — там дошли до 32 % Benchy **вооб�
   [CrealityOfficial/K2_Series_Klipper](https://github.com/CrealityOfficial/K2_Series_Klipper),
   референс в `toolchain/reference/`) — в роадмапе. Пока используются
   заводские значения шейперов (52.4/45.4, из живой сток-калибровки).
-- Восстановление после отключения питания — реализация Kalico (в апстриме
-  её нет) — вендорена, но на базе сейчас **не включена** (её z_align-
-  хореография заточена под Plus; порт под single-Z в роадмапе).
+- Нет восстановления после отключения питания: в апстриме PLR нет, а
+  kalico-модуль удалён из комплекта как мёртвый (его z_align-хореография
+  была заточена под Plus). Собственный single-Z PLR — в роадмапе.
 - KAMP-продувка и timelapse пока не включены (роадмап).
 - Макросы камерного нагрева (`M141`/`M191`) — заглушки («нет камерного
   нагревателя»). Если физически поставите PTC-блок от K2 Pro — переделайте
@@ -97,8 +97,8 @@ K2-OpenKlipper от grant0013 — там дошли до 32 % Benchy **вооб�
 k2-vanilla/
 ├── README.md / README_RU.md   этот файл (EN / RU)
 ├── LICENSE                    GPL-3.0
-├── files/                     вендоренные klippy-extras (GPL-3, без
-│                              изменений), patch_v013.py (хост-патчи),
+├── files/                     открытые K2-драйверы (GPL-3),
+│                              patch_v013.py (хост-патчи),
 │                              прекомпилированный c_helper.so,
 │                              motor_map.json (карта 485-параметров)
 ├── config/                    printer.cfg, mesh.cfg (меш стола),
@@ -116,11 +116,12 @@ k2-vanilla/
                                compat-report.md
 ```
 
-Вендоренные модули (все GPLv3, из [Jacob10383/kalico](https://github.com/Jacob10383/kalico),
-без изменений, кроме мест с пометкой в шапке файла): `prtouch.py`,
+Открытые K2-драйверы — все GPLv3, © Jacob10383, написаны для его форка
+Kalico и вендорены здесь (локальные правки помечены в шапках файлов;
+статический аудит доказал ноль kalico-специфичных API): `prtouch.py`,
 `serial_485.py`, `motor_control.py`, `box.py`, `box_addr.py`,
 `box_catalog.py`, `box_change.py`, `box_protocol.py`, `motion_limits.py`,
-`force_stop_homing.py`, `led_idle_manager.py`, `power_loss_recovery.py`.
+`force_stop_homing.py`, `led_idle_manager.py`.
 
 ## 4. Требования
 
@@ -269,10 +270,12 @@ sh .../install.sh revert     # назад на сток (файлы ванили
 не трогается. (Тот же выбор — у K2-OpenKlipper grant0013 и стека
 Jacob10383.)
 
-**Зачем `[power_loss_recovery]`, если в апстриме такого раздела нет?**
-В апстриме klipper3d действительно **нет** PLR-модуля. Реализация Kalico
-вендорена (чистый апстрим-совместимый API, проверено аудитом), чтобы раздел
-заработал после порта под single-Z.
+**Это сборка на Kalico?**
+Нет — хост это апстрим klipper3d, точка. Единственная связь с Kalico —
+место рождения драйверов: они написаны Jacob10383 для его форка Kalico и
+вендорены здесь после статического аудита, доказавшего ноль kalico-специ-
+фичных API. (Kalico-модуль PLR удалён из комплекта полностью — на базе он
+никогда не включался.)
 
 **Чем это отличается от прошивки Jacob10383 для K2 Plus или K2-OpenKlipper?**
 Философия та же — стоковая ОС + стоковые MCU + открытые extras, — но этот

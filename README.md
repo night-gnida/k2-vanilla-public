@@ -27,10 +27,10 @@ CFS filament system keep working through open-source reimplementations.
 │  Allwinner T113-i host (stock OpenWrt/Tina, root)                │
 │    ├─ klippy  ← UPSTREAM klipper3d (tag configurable, default    │
 │    │            v0.13.0), prebuilt cross c_helper.so             │
-│    ├─ 12 vendored K2 modules (GPL-3, from Jacob10383/kalico):    │
+│    ├─ 12 open K2 driver modules (GPL-3 © Jacob10383):            │
 │    │   prtouch (load-cell probe), serial_485, motor_control,     │
 │    │   box×5 (CFS), motion_limits, force_stop_homing,            │
-│    │   led_idle_manager, power_loss_recovery                     │
+│    │   led_idle_manager — all audited upstream-clean             │
 │    ├─ Moonraker (STOCK, untouched — same socket, Fluidd just     │
 │    │            reconnects)                                      │
 │    └─ Creality screen / display-server (left alone; see §2)      │
@@ -81,9 +81,9 @@ recipes (CPU pinning, arc resolution) are adopted here.
   [CrealityOfficial/K2_Series_Klipper](https://github.com/CrealityOfficial/K2_Series_Klipper),
   reference copy in `toolchain/reference/`) is on the roadmap. Factory shaper
   values (52.4/45.4, from a live stock calibration) are used meanwhile.
-- Power-loss recovery is the Kalico implementation (upstream has none) —
-  vendored but currently **not enabled** on the base (its z_align
-  choreography is Plus-specific; a single-Z port is on the roadmap).
+- No power-loss recovery: upstream has no PLR, and the Kalico module was
+  removed from the kit as dead weight (its z_align choreography was
+  Plus-specific). An own single-Z PLR is a roadmap item.
 - KAMP-style adaptive purge and timelapse are not included yet (roadmap).
 - Chamber-heater macros (`M141`/`M191`) are no-ops ("no chamber heater").
   If you later physically add the K2 Pro PTC unit, rework them Pro-style.
@@ -94,7 +94,7 @@ recipes (CPU pinning, arc resolution) are adopted here.
 k2-vanilla/
 ├── README.md / README_RU.md   this file (EN / RU)
 ├── LICENSE                    GPL-3.0
-├── files/                     vendored klippy extras (GPL-3, unmodified),
+├── files/                     open K2 driver modules (GPL-3),
 │                              patch_v013.py (host patches), prebuilt
 │                              c_helper.so, motor_map.json (485 param map)
 ├── config/                    printer.cfg, mesh.cfg (bed mesh), prtouch.cfg,
@@ -111,11 +111,12 @@ k2-vanilla/
                                compat-report.md
 ```
 
-Vendored modules (all GPLv3, from [Jacob10383/kalico](https://github.com/Jacob10383/kalico),
-unmodified except where a comment says otherwise): `prtouch.py`,
-`serial_485.py`, `motor_control.py`, `box.py`, `box_addr.py`,
-`box_catalog.py`, `box_change.py`, `box_protocol.py`, `motion_limits.py`,
-`force_stop_homing.py`, `led_idle_manager.py`, `power_loss_recovery.py`.
+Open K2 driver modules — all GPLv3, © Jacob10383, authored for his Kalico
+fork and vendored here (in-file comments mark the few local fixes; a static
+audit proves zero Kalico-only API usage): `prtouch.py`, `serial_485.py`,
+`motor_control.py`, `box.py`, `box_addr.py`, `box_catalog.py`,
+`box_change.py`, `box_protocol.py`, `motion_limits.py`,
+`force_stop_homing.py`, `led_idle_manager.py`.
 
 ## 4. Requirements
 
@@ -262,10 +263,12 @@ negotiated protocol; reflashing GD32 boards with vanilla builds is risk with
 no benefit. Nothing here touches the MCU. (grant0013's K2-OpenKlipper and
 Jacob10383's stack make the same choice.)
 
-**Why is `[power_loss_recovery]` included if upstream has no such section?**
-Upstream klipper3d indeed has **no** PLR module. Kalico's implementation is
-vendored (pure upstream-compatible API, audited) so the section can work
-once the single-Z port is done.
+**Is this a Kalico build?**
+No — the host is upstream klipper3d, period. The only Kalico connection is
+the birthplace of the driver modules: they were authored by Jacob10383 for
+his Kalico fork and are vendored here after a static audit proved they use
+zero Kalico-only APIs. (Kalico's PLR module was removed from the kit
+entirely — it was never enabled on the base.)
 
 **How does this differ from Jacob10383's K2 Plus custom firmware or
 grant0013's K2-OpenKlipper?**

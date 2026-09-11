@@ -58,8 +58,9 @@ GUARDED_CALLS = {
     ("motor_control.py", "Coord"),
 }
 
-# modules intentionally NOT loaded on base K2 (findings are informational)
-DISABLED_ON_BASE = {"power_loss_recovery.py"}
+# modules intentionally NOT loaded on base K2 (findings are informational);
+# the Kalico PLR module was removed from the kit entirely in 2026-09
+DISABLED_ON_BASE = set()
 
 CFG_OPT_RE = re.compile(
     r"\b\w+\.get(?:floatlist|intlist|float|int|boolean|lists?|choice|string)?\("
