@@ -1,2 +1,6 @@
 toolchain/
 zigrel.json
+__pycache__/
+*.pyc
+docs/capture.tar.gz
+.zcode/

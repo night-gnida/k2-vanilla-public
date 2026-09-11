@@ -28,7 +28,11 @@ say() { echo "==> $*"; }
 die() { echo "ERROR: $*" >&2; exit 1; }
 
 [ "$(id -u)" = "0" ] || die "run as root"
-[ -x /opt/bin/opkg ] || die "Entware not found (/opt/bin/opkg). Install it first (helper menu: entware)."
+# Entware is only needed to BUILD chelper on-printer; the kit ships a
+# prebuilt hard-float c_helper.so, so a bare stock system works without it.
+if [ ! -x /opt/bin/opkg ] && [ ! -f "$HERE/../files/c_helper.so" ]; then
+    die "Entware not found (/opt/bin/opkg) and no prebuilt files/c_helper.so"
+fi
 [ -x "$HOST_PY" ] || die "stock klippy-env python missing: $HOST_PY"
 "$HOST_PY" -c 'import cffi, greenlet' 2>/dev/null || die "$HOST_PY lacks cffi/greenlet"
 
@@ -60,9 +64,16 @@ status_cmd() {
 }
 
 do_deps() {
-    say "Installing Entware gcc/make (chelper build only)"
-    opkg install gcc make 2>&1 | tail -1
-    [ -x /opt/bin/gcc ] || die "Entware gcc not available; chelper cannot be built"
+    if [ ! -x /opt/bin/opkg ]; then
+        [ -f "$HERE/../files/c_helper.so" ] || die "no Entware and no prebuilt c_helper.so"
+        say "Entware absent — skipping gcc/make (prebuilt c_helper.so will be used)"
+    else
+        say "Installing Entware gcc/make (chelper build only)"
+        opkg install gcc make 2>&1 | tail -1
+        if [ ! -x /opt/bin/gcc ] && [ ! -f "$HERE/../files/c_helper.so" ]; then
+            die "Entware gcc not available; chelper cannot be built"
+        fi
+    fi
     say "Host python check: $("$HOST_PY" --version 2>&1)"
 }
 
@@ -71,14 +82,37 @@ do_fetch() {
         say "Klipper tree already present at $SRC_DIR — skipping download"
         return
     fi
-    say "Downloading Klipper $KLIPPER_TAG (codeload tarball)"
+    local tarball="${K2_VANILLA_TARBALL:-$ROOT/k2setup/klipper-$KLIPPER_TAG.tar.gz}"
     rm -rf "$SRC_DIR"
     mkdir -p "$SRC_DIR"
-    python3 - "$KLIPPER_TAG" "$SRC_DIR" <<'PYEOF'
+    if [ -f "$tarball" ]; then
+        say "Extracting local tarball $tarball"
+        "$HOST_PY" - "$tarball" "$SRC_DIR" <<'PYEOF'
+import sys, tarfile, os, shutil
+tarball, dest = sys.argv[1], sys.argv[2]
+# /tmp is a small ramdisk on this device — extract on UDISK instead
+xd = os.path.join(os.path.dirname(dest), "k2setup", "extract")
+with tarfile.open(tarball) as tf:
+    tf.extractall(xd)
+top = os.path.join(xd, os.listdir(xd)[0])
+for n in os.listdir(top):
+    dst = os.path.join(dest, n)
+    if os.path.isdir(dst):
+        shutil.rmtree(dst)
+    elif os.path.exists(dst):
+        os.remove(dst)
+    shutil.move(os.path.join(top, n), dst)
+shutil.rmtree(xd)
+print("extracted", tarball, "->", dest)
+PYEOF
+    else
+        say "Downloading Klipper $KLIPPER_TAG (codeload tarball)"
+        "$HOST_PY" - "$KLIPPER_TAG" "$SRC_DIR" <<'PYEOF'
 import sys, tarfile, tempfile, urllib.request, os, shutil
 tag, dest = sys.argv[1], sys.argv[2]
 url = f"https://codeload.github.com/Klipper3d/klipper/tar.gz/refs/tags/{tag}"
-tmp = tempfile.mktemp(suffix=".tar.gz")
+tmp = tempfile.mktemp(suffix=".tar.gz", dir=os.path.dirname(dest))
+xd = os.path.join(os.path.dirname(dest), "k2setup", "extract")
 for attempt in range(5):
     try:
         urllib.request.urlretrieve(url, tmp)
@@ -88,8 +122,8 @@ for attempt in range(5):
 else:
     raise SystemExit("download failed")
 with tarfile.open(tmp) as tf:
-    tf.extractall("/tmp/klipper-vanilla-x")
-top = os.path.join("/tmp/klipper-vanilla-x", os.listdir("/tmp/klipper-vanilla-x")[0])
+    tf.extractall(xd)
+top = os.path.join(xd, os.listdir(xd)[0])
 for n in os.listdir(top):
     dst = os.path.join(dest, n)
     if os.path.isdir(dst):
@@ -97,9 +131,10 @@ for n in os.listdir(top):
     elif os.path.exists(dst):
         os.remove(dst)
     shutil.move(os.path.join(top, n), dst)
-shutil.rmtree("/tmp/klipper-vanilla-x"); os.remove(tmp)
+shutil.rmtree(xd); os.remove(tmp)
 print("extracted", tag, "->", dest)
 PYEOF
+    fi
     [ -f "$SRC_DIR/klippy/klippy.py" ] || die "klipper source missing after extract"
 }
 
@@ -139,6 +174,22 @@ do_config() {
     say "Deploying config to $CFG_DIR (stock config untouched)"
     mkdir -p "$CFG_DIR" "$LOG_DIR"
     cp "$HERE"/../config/*.cfg "$CFG_DIR"/ || die "config copy failed"
+    # UDISK NAND quirk: freshly overwritten pages can read back stale/mixed
+    # for minutes (klippy once parsed a half-old config -> bogus errors).
+    # Verify every deployed file byte-for-byte before restarting klippy.
+    local f tries sum_src sum_dst
+    for f in "$HERE"/../config/*.cfg; do
+        sum_src=$(md5sum < "$f" | cut -d' ' -f1)
+        tries=0
+        while :; do
+            sum_dst=$(md5sum < "$CFG_DIR/$(basename "$f")" | cut -d' ' -f1)
+            [ "$sum_src" = "$sum_dst" ] && break
+            tries=$((tries+1))
+            [ "$tries" -gt 60 ] && die "config verify failed: $(basename "$f")"
+            cp "$f" "$CFG_DIR/$(basename "$f")"
+            sleep 2
+        done
+    done
 }
 
 make_init() {
@@ -151,7 +202,9 @@ STOP=01
 USE_PROCD=1
 start_service() {
     procd_open_instance
-    procd_set_param command $HOST_PY $SRC_DIR/klippy/klippy.py $CFG_DIR/printer.cfg -a $api_sock -l $LOG_FILE
+    # taskset: pin klippy to the 2nd core — timing stability on the dual-A7
+    # (same recipe K2-OpenKlipper validated; arcs resolution must stay 1.0)
+    procd_set_param command taskset 0x2 $HOST_PY $SRC_DIR/klippy/klippy.py $CFG_DIR/printer.cfg -a $api_sock -l $LOG_FILE
     procd_set_param env CC=/opt/bin/gcc MALLOC_ARENA_MAX=2 PATH=/opt/bin:/opt/sbin:/bin:/sbin:/usr/bin:/usr/sbin
     procd_set_param respawn 360 5 0
     procd_set_param stdout 0
@@ -217,9 +270,17 @@ wait_ready() {
     say "Waiting up to 420s for klippy_state=ready"
     i=0
     while [ $i -lt 420 ]; do
-        # Moonraker version differences: stock reports "state", newer
-        # builds "klippy_state" - accept either.
-        if wget -qO- "http://127.0.0.1:7125/printer/info" 2>/dev/null                 | grep -qE '"(klippy_)?state":[[:space:]]*"ready"'; then
+        # stock busybox may lack wget — ask the stock python instead
+        state=$("$HOST_PY" - <<'PYEOF' 2>/dev/null
+import json, urllib.request
+try:
+    info = json.load(urllib.request.urlopen("http://127.0.0.1:7125/printer/info", timeout=3))
+    print(info.get("klippy_state") or info.get("state") or "")
+except Exception:
+    pass
+PYEOF
+)
+        if [ "$state" = "ready" ]; then
             say "VANILLA KLIPPER IS UP"
             return 0
         fi

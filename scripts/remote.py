@@ -3,10 +3,14 @@
 
 Usage:
   python scripts/remote.py exec  "command"            # run on printer, print output
-  python scripts/remote.py push   LOCAL REMOTE        # recursive upload
-  python scripts/remote.py gcode  "G28 X"             # send gcode via /tmp/klippy_uds
+  python scripts/remote.py push   LOCAL REMOTE        # upload; the file lands in
+      dirname(REMOTE) under its LOCAL basename (REMOTE's own filename is
+      ignored — copy/rename on the printer if it must differ)
+  # gcode mode: use scripts/pr_gcode.py pushed to the printer instead —
+  # the old heredoc-based gcode mode here is unreliable.
 
-Env: K2_HOST (default 192.168.1.10), K2_USER (root), K2_PASS (creality_2024)
+Env: K2_HOST (default 192.168.1.10), K2_USER (root), K2_PASS (creality_2024).
+Git Bash: export MSYS_NO_PATHCONV=1 or /mnt/... args get path-mangled.
 """
 import json
 import os

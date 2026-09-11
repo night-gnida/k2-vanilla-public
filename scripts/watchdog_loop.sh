@@ -24,7 +24,14 @@ while :; do
     [ -f /etc/init.d/klipper-vanilla ] || continue
     /etc/init.d/klipper-vanilla enabled || continue
 
-    body=$(wget -qO- "http://127.0.0.1:7125/printer/info" 2>/dev/null)
+    # stock OpenWrt busybox may lack the wget applet — use stock python3
+    body=$(/usr/bin/python3 -c '
+import json, urllib.request
+try:
+    info = json.load(urllib.request.urlopen("http://127.0.0.1:7125/printer/info", timeout=3))
+    print(json.dumps(info))
+except Exception:
+    pass' 2>/dev/null)
     case "$body" in
         *'"state": "ready"'*|*'"state":"ready"'*|*'"klippy_state": "ready"'*|*'"klippy_state":"ready"'*)
             fails=0
